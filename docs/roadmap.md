@@ -19,14 +19,14 @@ Exit criteria: a fresh agent can read the docs and act safely without inventing 
 
 Goal: project boots, builds, tests run green on an empty shell.
 
-- Add deps: Tailwind v4, Zod, `@tanstack/svelte-query`, Paraglide JS, pino, `openapi-typescript`, msw, vitest, `@playwright/test`, `@sveltejs/adapter-node`.
-- Folder skeleton under `src/lib/{core,shared,domains,server,generated}` and `src/routes/{(auth),(app),api}`.
-- SSR enabled. `hooks.server.ts` with auth + CSP + request-id + `handleError`.
-- Global `+error.svelte`.
-- ESLint flat config, Prettier, lefthook pre-commit.
-- CI: `bun install`, `check`, `lint`, `test`, `build`.
+- [x] Add deps: Tailwind v4, Zod, `@tanstack/svelte-query`, Paraglide JS, pino, `openapi-typescript`, msw, vitest, `@playwright/test`, `@sveltejs/adapter-node`.
+- [x] Folder skeleton under `src/lib/{core,shared,domains,server,generated}` and `src/routes/{(auth),(app),api}`.
+- [x] SSR enabled. `hooks.server.ts` with auth + CSP + request-id + `handleError`.
+- [x] Global `+error.svelte`.
+- [x] ESLint flat config, Prettier, lefthook pre-commit.
+- [x] CI: `bun install`, `check`, `lint`, `test`, `build`.
 
-Exit criteria: `bun run dev` shows an empty layout with i18n locale switch wired; `bun test` green.
+Exit criteria: `bun run dev` shows an empty layout with i18n locale switch wired; `bun test` green. **Met** — see CHANGELOG `[Unreleased] Phase 1`.
 
 ## Phase 2 — Core primitives
 
