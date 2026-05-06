@@ -1,0 +1,9 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"hello": "Hello, {name}!",
+	"app_title": "surfaceit",
+	"locale_switch_label": "Language",
+	"error_generic_title": "Something went wrong",
+	"error_generic_body": "An unexpected error occurred. Please try again.",
+	"error_request_id": "Request ID: {id}"
+}
