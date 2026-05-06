@@ -1,0 +1,20 @@
+# Lefthook config for surfaceit.
+#
+# Conformance:
+#   - .claude/rules/git-workflow.md (no skipping hooks; fix the underlying issue)
+#   - .claude/rules/code-review.md  (typecheck + lint must be green pre-merge)
+#
+# pre-commit runs against staged TS/Svelte files only so the cost stays
+# proportional to what the developer is changing. The full check runs in CI.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: prettier
+      glob: '*.{ts,js,svelte,json,md,yml,yaml,css}'
+      run: bunx prettier --check {staged_files}
+    - name: eslint
+      glob: '*.{ts,js,svelte}'
+      run: bunx eslint {staged_files}
+    - name: svelte-check
+      glob: '*.{ts,svelte}'
+      run: bun run check

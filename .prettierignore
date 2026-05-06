@@ -1,0 +1,20 @@
+.svelte-kit
+build
+node_modules
+src/lib/generated
+static
+coverage
+playwright-report
+test-results
+bun.lock
+
+# Authoritative docs are formatted by hand and should not be reflowed.
+CLAUDE.md
+docs/
+.claude/
+
+# Paraglide / inlang manages its own files.
+project.inlang/cache
+project.inlang/.meta.json
+project.inlang/README.md
+project.inlang/settings.json
