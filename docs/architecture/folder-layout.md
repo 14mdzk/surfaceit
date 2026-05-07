@@ -95,7 +95,7 @@ Configured in `svelte.config.js`:
 - TS modules: `kebab-case.ts`
 - Files containing runes: must end in `.svelte.ts` or live inside a `.svelte` component.
 - Server-only TS: must end in `.server.ts` **or** live under `src/lib/server/**`.
-- Tests: co-located `*.test.ts` for units; `tests/**.spec.ts` for Playwright.
+- Tests: co-located `*.test.ts` for units (Vitest); `e2e/**.e2e.ts` for Playwright. The `.e2e.ts` extension keeps Bun's built-in `bun test` runner from grabbing Playwright specs (it globs `*.{test,spec}.{ts,tsx,js,jsx}` and has no exclude config).
 
 ## Forbidden
 

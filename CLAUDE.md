@@ -31,7 +31,7 @@ Never act before reading the rules that govern your task. The rules override def
 ## Anti-drift contract
 
 Every PR must:
-- pass `bun run check && bun run lint && bun test` (when those scripts land in Phase 1).
+- pass `bun run check && bun run lint && bun run test && bun run build` (Phase 1 scripts). Note: `bun run test` (Vitest) is not the same as `bun test` (Bun's built-in runner — not used here).
 - cite the rule(s) it satisfies if it touches a constrained surface (auth, state, api, styling, i18n).
 - include or update the relevant doc page when behavior changes.
 - be the product of a **dispatched agent** (persona or specialist) — see `.claude/rules/agent-dispatch.md`. The main thread orchestrates and reviews; it does not implement in place when delegation is the right call.

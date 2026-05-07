@@ -15,8 +15,8 @@ description: >
 - **DO** test domain stores by calling the factory directly with stub deps (see `state-management.md`).
 - **DO** mock HTTP with MSW for component tests. Do not stub `fetch` by hand.
 - **DO** test the realtime path with a fake `EventSource` driver so events can be injected deterministically.
-- **DO** write Playwright e2e specs under `tests/` for critical flows: login, list+paginate, mutate, logout, locale switch.
-- **DO** run `bun test` and `bun run e2e` in CI; both must be green to merge.
+- **DO** write Playwright e2e specs under `e2e/` for critical flows: login, list+paginate, mutate, logout, locale switch. Filename pattern is `*.e2e.ts` (not `*.spec.ts`) so Bun's built-in test runner does not pick them up — see `## Runner separation` below.
+- **DO** run `bun run test` (Vitest) and `bun run test:e2e` (Playwright) in CI; both must be green to merge.
 
 ## DON'T
 
@@ -88,9 +88,26 @@ test('login + list + logout', async ({ page }) => {
 |---|---|---|
 | Typecheck | `svelte-check` | Compile error |
 | Lint | `eslint .` | Style or rule violation |
-| Unit | `bun test` | Logic regression |
-| e2e | `bun run e2e` | User flow broken |
+| Unit | `bun run test` | Logic regression |
+| e2e | `bun run test:e2e` | User flow broken |
 | Build | `vite build` | Bundle/SSR regression |
 | Codegen | `bun run codegen:check` | Spec drift |
 
 All gates must be green to merge.
+
+## Runner separation
+
+Two different runners live in this repo. They look alike but are not the same.
+
+| Command | Runner | Scope |
+|---|---|---|
+| `bun run test` | Vitest (via `package.json` script) | Unit tests in `src/**/*.test.ts` |
+| `bun run test:e2e` | Playwright | End-to-end specs in `e2e/**/*.e2e.ts` |
+| `bun test` | Bun's built-in test runner | **Not used.** Globs `*.{test,spec}.{ts,tsx,js,jsx}` repo-wide and has no path-exclude config. |
+
+Rules:
+
+- **DO** name Playwright specs `*.e2e.ts`. The `.e2e.ts` suffix is what keeps `bun test` from collecting them, since Bun's built-in runner would otherwise execute Playwright's `test()` outside its driver and fail with `Playwright Test did not expect test() to be called here`.
+- **DO** name Vitest unit tests `*.test.ts` and co-locate them next to the unit under test.
+- **DON'T** use `*.spec.ts` anywhere — that filename is reserved for the now-unused Bun built-in runner pattern, and adding one would re-introduce the runner collision.
+- **DON'T** invoke `bun test` directly. Use the script form (`bun run test` or `bun run test:e2e`).
