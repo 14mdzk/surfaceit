@@ -1,10 +1,29 @@
 /**
- * Config entry point (Phase 1 placeholder).
+ * Public config entry point — browser-safe.
  *
- * Phase 2 will introduce a Zod-validated env loader (public/private split).
- * For now this module only exposes a build-time hint so the smoke test has
- * something concrete to import.
+ * Reads from SvelteKit's $env/static/public (tree-shaken, no runtime overhead)
+ * and parses against publicEnvSchema. Throws at startup if values are invalid.
  *
- * Conformance: rule .claude/rules/security.md (no secrets in PUBLIC_*).
+ * Consumers: core/logger (PUBLIC_LOG_LEVEL), core/api (PUBLIC_API_URL),
+ * any component that needs PUBLIC_APP_NAME.
+ *
+ * Conformance:
+ *   - .claude/rules/security.md   (no private keys here)
+ *   - .claude/rules/observability.md (PUBLIC_LOG_LEVEL)
+ *   - .claude/rules/architecture.md (core/ layer, browser-safe)
  */
-export const PROJECT_NAME = 'surfaceit' as const;
+import { PUBLIC_API_URL, PUBLIC_LOG_LEVEL, PUBLIC_APP_NAME } from '$env/static/public';
+import { parsePublicEnv } from './schema.js';
+import type { PublicEnv } from './schema.js';
+
+export type { PublicEnv };
+
+/**
+ * Validated public configuration. Safe to import from any module, including
+ * client-side Svelte components.
+ */
+export const publicConfig: PublicEnv = parsePublicEnv({
+	PUBLIC_API_URL,
+	PUBLIC_LOG_LEVEL,
+	PUBLIC_APP_NAME
+});
