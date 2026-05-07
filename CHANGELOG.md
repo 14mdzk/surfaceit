@@ -48,8 +48,14 @@ once it tags a release.
     TS/Svelte files.
   - Vitest config with the SvelteKit Vite plugin; one smoke unit at
     `src/lib/core/config/config.test.ts`.
-  - Playwright config + single smoke spec at `e2e/smoke.spec.ts` that
-    asserts the locale switch is visible.
+  - Playwright config + single smoke spec at `e2e/smoke.e2e.ts` that
+    asserts the locale switch is visible. The `.e2e.ts` extension and
+    `testMatch: '**/*.e2e.ts'` keep Bun's built-in test runner (`bun test`)
+    from accidentally collecting Playwright specs — Bun's runner globs
+    `*.{test,spec}.{ts,tsx,js,jsx}` and has no path-exclude config, so
+    the project relies on the file extension to keep the two runners
+    disjoint. Use `bun run test` for unit (Vitest) and `bun run test:e2e`
+    for end-to-end (Playwright); `bun test` (built-in) is not used.
   - GitHub Actions: `ci.yml` (install → codegen → check → lint → test →
     build, single ubuntu-latest, bun-store cache), `e2e.yml` (pull_request
     only, `continue-on-error: true`, becomes blocking in Phase 5).

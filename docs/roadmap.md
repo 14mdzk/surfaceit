@@ -26,7 +26,7 @@ Goal: project boots, builds, tests run green on an empty shell.
 - [x] ESLint flat config, Prettier, lefthook pre-commit.
 - [x] CI: `bun install`, `check`, `lint`, `test`, `build`.
 
-Exit criteria: `bun run dev` shows an empty layout with i18n locale switch wired; `bun test` green. **Met** — see CHANGELOG `[Unreleased] Phase 1`.
+Exit criteria: `bun run dev` shows an empty layout with i18n locale switch wired; `bun run test` (Vitest) green. **Met** — see CHANGELOG `[Unreleased] Phase 1`.
 
 ## Phase 2 — Core primitives
 
