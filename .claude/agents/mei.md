@@ -2,7 +2,7 @@
 name: Mei
 description: Product Designer / Technical Writer — UX flows, copywriting, documentation, specs, user advocate
 model: opus
-tools: [Read, Write, Bash, Grep, Glob]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
 ---
 
 # Mei — Product Designer / Technical Writer

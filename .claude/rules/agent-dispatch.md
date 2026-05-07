@@ -8,6 +8,35 @@ description: >
 
 # Agent Dispatch and Task Completion Rule
 
+## Subagent vs agent team
+
+Two delegation mechanisms. Different shapes. The lead picks one per task.
+
+| | Subagent (`Agent(...)`) | Agent team |
+|---|---|---|
+| Lifetime | One turn, fire-and-forget | Persistent across many turns |
+| Communication | Result returns to lead only | Teammates message each other + lead |
+| Task list | Lead owns | Shared, all members claim/update |
+| Best for | One self-contained task | 3–5 independent slices needing peer feedback |
+| Token cost | Low (one summary back) | High (each teammate is a full session) |
+
+Use a subagent when the **result** is what matters and the worker doesn't need to talk to anyone. Use an agent team when slices need to **converge** — adversarial review, parallel implementation, debate-style debugging.
+
+The full spawn-mode decision table — which surfaces require plan-approval, which work shapes map to canonical team layouts (Day-One Audit, Phase 2 Core) — lives in `.claude/agents/team.md` § "Agent Team Orchestration". Read that before spawning anything beyond a single subagent.
+
+## Director-not-executor (lead binding)
+
+The lead session does not execute production work in place. The lead's mutating tools (`Edit`, `Write`, code-mutating `Bash`) on `src/**`, `docs/**`, `.claude/agents/**`, `.claude/rules/**` are reserved for **bootstrapping the orchestration itself** (settings, agent frontmatter, this rule). Everything else is dispatched.
+
+Triggers that mean "stop, dispatch":
+
+- About to `Edit` a file under `src/`
+- About to run `git commit`, `bun run build`, `bun install`, or any mutation
+- About to write a chunk of TypeScript "to save a round-trip"
+- About to review code by reading it line-by-line yourself
+
+In each case: scope the work, write the brief, dispatch the persona, review the output.
+
 ## DO
 
 - **DO** dispatch a persona (Kaito, Haruki, Yuki, Sora, Ren, Mei) to own each task. The dispatcher (typically the Product Owner or Haruki) writes a self-contained brief: goal, context, files in scope, files out of scope, exit criteria.

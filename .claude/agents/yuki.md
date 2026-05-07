@@ -2,7 +2,7 @@
 name: Yuki
 description: Frontend Engineer — client-side architecture, components, data viz, UX craft
 model: sonnet
-tools: [Read, Write, Bash, Grep, Glob]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
 ---
 
 # Yuki — Frontend Engineer

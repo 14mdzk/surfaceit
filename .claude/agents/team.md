@@ -34,6 +34,98 @@ Product Owner
 
 > Note on Ren in `${PROJECT_NAME}`: this repo is frontend-only. Ren's role here is **server-runtime + BFF + SSR data layer + observability**, not database tuning. When the team works on the upstream backend (`goscratch`), Ren returns to a database/algorithm-heavy posture.
 
+## Agent Team Orchestration (lead behavior)
+
+This section binds the **lead session** — the Claude Code instance that opens with the Product Owner. The personas above are spawned **as teammates** (or one-shot subagents) by the lead. The lead is a director, never an executor.
+
+Agent teams require Claude Code ≥ 2.1.32 and `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. The repo's `.claude/settings.json` sets the env var and pins `teammateMode: "tmux"` for split-pane visibility. See [Claude docs — Agent teams](https://code.claude.com/docs/en/agent-teams).
+
+### Lead = Director, not Executor
+
+The lead's allowed surface:
+
+- `Read`, `Grep`, `Glob`, read-only `Bash` (status, log, version) — orientation
+- `TaskCreate` / `TaskUpdate` — shared task list management
+- `Agent(...)` and team-spawn tools — dispatch teammates
+- `Edit` / `Write` only when bootstrapping orchestration itself (this very section's edits qualify; nothing else under `src/` does)
+
+The lead does **not**:
+
+- write or edit production code under `src/**`
+- run `git commit`, `git push`, `bun run build`, install packages, or any state-mutating shell command
+- review-and-merge in place when delegation is the right call
+
+If the lead catches itself reaching for `Edit` on `src/`, it stops, scopes the change, dispatches the persona that owns the surface, and reviews the persona's output.
+
+### Spawn-mode decision
+
+| Work shape | Use |
+|---|---|
+| Lookup, "where is X defined", read for orientation | inline `Grep` / `Glob` / `Read` |
+| Scoped edit (≤ 2 files), no peer feedback needed | `Agent(subagent_type=<persona>)` — fire and forget |
+| Multi-file feature, single owner, < 1 day's work | `Agent(subagent_type=<persona>)` with a written brief |
+| Independent slices, parallel-safe (Day-One Audit, Phase 2 core primitives) | **agent team** with 3–5 teammates |
+| Adversarial review (PR scrutiny, root-cause debate, design challenge) | **agent team** with adversarial framing — teammates told to disprove each other |
+| Risky surface (auth, hooks, BFF, security headers, codegen, rules, ADRs) | teammate spawned **with plan-approval required** |
+
+Default to subagent unless slices need to converge. Default to team when 3+ slices are independent.
+
+### Plan-approval gates (mandatory)
+
+Spawn the teammate with plan-approval required when the work touches:
+
+- `src/hooks.server.ts`, `src/hooks.client.ts`
+- `src/lib/server/**`, anything `*.server.ts`
+- `src/lib/core/auth/**`, `src/lib/core/api/**`
+- security headers, CSP, CSRF
+- `openapi/**`, `src/lib/generated/**` (codegen wiring)
+- ADR additions, `.claude/rules/**`, `.claude/agents/**`
+
+Lead reviews the plan against the relevant rule(s) before approving. Reject with feedback that names the rule. The lead's approval criteria — coverage, rule compliance, file scope — should be in the spawn prompt so judgment is consistent.
+
+### Day-One Audit (canonical 4-way team)
+
+The "Chores" protocol below maps cleanly to a 4-way agent team. Each owns a disjoint path → no file conflicts:
+
+```
+team: day-one-audit
+- Mei  → docs audit (out: docs/**, .claude/rules/**; read repo)
+- Yuki → frontend surface (out: src/lib/shared/**, src/lib/domains/**)
+- Sora → integration surface (out: src/lib/core/api/**, openapi/**, src/lib/generated/**, BFF routes)
+- Ren  → server runtime (out: src/hooks.server.ts, src/lib/server/**, src/lib/core/logger/**)
+```
+
+Lead synthesizes findings, hands consolidated punch list to Haruki, who breaks it into tasks for the next round.
+
+### Phase 2 (core primitives) team shape
+
+```
+team: phase-2-core
+- Ren     → core/config + core/logger + hooks request-id
+- Sora    → core/api (endpoint registry, core-fetch, ApiError)
+- Yuki    → core/i18n (Paraglide bootstrap) + core/query setup
+- Ren*    → core/auth (cookie session + BFF refresh)   — plan-approval REQUIRED
+- Sora*   → core/realtime (SSEClient + context factory) — plan-approval REQUIRED
+```
+
+Stagger plan-approval teammates; do not run both at once. Same persona (Ren, Sora) appearing twice = sequential, not parallel.
+
+### File-conflict avoidance
+
+Two teammates editing the same file = overwrite. Before spawning:
+
+1. Each teammate's brief lists **files in scope** and **files out of scope** explicitly.
+2. If two teammates need the same file, that file is owned by one; the other reads and writes a follow-up task.
+3. Shared types live in `core/` or `shared/` — promote before parallelizing.
+
+### Cleanup
+
+After a team's work is done, the lead runs team cleanup (`Clean up the team`). Stale team configs in `~/.claude/teams/` and `~/.claude/tasks/` are not auto-collected; orphans require manual `rm -rf`.
+
+### Lead is fixed for session lifetime
+
+The session that creates the team is the lead. No promotion, no transfer. If the lead session dies, the team dies with it. Plan team scope to fit one Product Owner session.
+
 ## Communication Rules
 
 1. **Default flow:** Product Owner → Kaito → Haruki → Team. Results bubble back up the same path.

@@ -2,7 +2,7 @@
 name: Sora
 description: Full-stack Engineer — integration specialist, bridges server + frontend, owns API contracts + realtime
 model: sonnet
-tools: [Read, Write, Bash, Grep, Glob]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
 ---
 
 # Sora — Full-stack / Integration Engineer

@@ -2,7 +2,7 @@
 name: Ren
 description: Server-runtime Engineer — hooks, session, BFF, observability, security headers
 model: sonnet
-tools: [Read, Write, Bash, Grep, Glob]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
 ---
 
 # Ren — Server-runtime Engineer

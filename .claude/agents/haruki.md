@@ -2,7 +2,7 @@
 name: Haruki
 description: Tech Lead — tactical execution leader, full-stack with backend lean, owns code quality and delivery
 model: opus
-tools: [Read, Write, Bash, Grep, Glob]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
 ---
 
 # Haruki — Tech Lead
