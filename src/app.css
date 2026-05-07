@@ -1,1 +1,154 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens — surfaceit boilerplate
+ *
+ * Rule: styling.md — tokens are the single lever for visual identity.
+ * Downstream forks re-skin by editing this file, not components.
+ *
+ * Architecture of this file:
+ *
+ *  1. @custom-variant dark — enables .dark class-based dark mode for Tailwind utilities.
+ *  2. @theme — tokens that Tailwind v4 exposes as utility classes (color, radius, shadow, easing).
+ *  3. :root / html — plain CSS vars consumed by var() in components (durations, density, control heights).
+ *  4. .dark — semantic color overrides for dark mode.
+ *  5. @media prefers-reduced-motion — zero-out duration tokens.
+ */
+
+/* ─── Dark mode variant ─────────────────────────────────────────────────── */
+/*
+ * Opt into class-based dark mode so a future theme toggle works.
+ * Without this, Tailwind's dark: prefix only responds to prefers-color-scheme.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Tailwind theme tokens ─────────────────────────────────────────────── */
+/*
+ * Only tokens in @theme generate Tailwind utility classes.
+ * Naming follows Tailwind v4 namespaces:
+ *   --color-*   → bg-*, text-*, border-*, etc.
+ *   --radius-*  → rounded-*
+ *   --shadow-*  → shadow-*
+ *   --ease-*    → ease-*
+ */
+@theme {
+	/*
+	 * Neutral ramp (zinc — neutral without warm/cool bias).
+	 * 5-stop scale: 50/200/500/700/900.
+	 * Each stop is anchored to a semantic alias below; no unused stops.
+	 *   50  → bg (light), fg text (dark)
+	 *   200 → border (light)
+	 *   500 → muted text (both modes)
+	 *   700 → border (dark)
+	 *   900 → bg (dark), fg text (light)
+	 * Note: --color-surface dark uses an inline value (27.4% / 264.5°) that
+	 * sits between 700 and 900; adding a 6th stop solely for surface would
+	 * violate the 5-stop constraint. Fork and expand if you need the slot.
+	 */
+	--color-neutral-50: oklch(98.2% 0.002 247.8);
+	--color-neutral-200: oklch(92.8% 0.006 264.5);
+	--color-neutral-500: oklch(55.4% 0.018 257.4);
+	--color-neutral-700: oklch(37.1% 0.013 258.3);
+	--color-neutral-900: oklch(21% 0.006 264.5);
+
+	/*
+	 * Accent ramp (violet — distinct, forkable).
+	 * 5-stop scale: 50/200/400/500/700.
+	 * light uses 500, dark uses 400 (brighter on dark bg); 50/200/700 are
+	 * hover/tint/shade pivot points for Wave-2 primitives.
+	 */
+	--color-accent-50: oklch(97.2% 0.014 308);
+	--color-accent-200: oklch(87.6% 0.055 309);
+	--color-accent-400: oklch(63.7% 0.142 307.5);
+	--color-accent-500: oklch(54.2% 0.163 306.4);
+	--color-accent-700: oklch(40.9% 0.138 304.5);
+
+	/* Destructive ramp (red) */
+	--color-destructive-50: oklch(97.1% 0.013 17.4);
+	--color-destructive-500: oklch(62.8% 0.257 29.2);
+	--color-destructive-700: oklch(50.5% 0.213 27.5);
+
+	/* Semantic aliases — light mode defaults */
+	--color-bg: var(--color-neutral-50);
+	--color-fg: var(--color-neutral-900);
+	--color-muted: var(--color-neutral-500);
+	--color-border: var(--color-neutral-200);
+	--color-surface: #ffffff;
+	--color-accent: var(--color-accent-500);
+	--color-accent-fg: #ffffff;
+	--color-destructive: var(--color-destructive-500);
+	--color-destructive-fg: #ffffff;
+
+	/* Radius scale */
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-full: 9999px;
+
+	/* Elevation / shadow scale */
+	--shadow-sm: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
+	--shadow-md: 0 4px 6px -1px oklch(0% 0 0 / 0.1), 0 2px 4px -2px oklch(0% 0 0 / 0.1);
+	--shadow-lg: 0 10px 15px -3px oklch(0% 0 0 / 0.1), 0 4px 6px -4px oklch(0% 0 0 / 0.1);
+
+	/* Easing — Tailwind v4 exposes these as ease-* utilities */
+	--ease-out: cubic-bezier(0, 0, 0.2, 1);
+	--ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Base / density tokens (plain CSS vars, not utility-generating) ─────── */
+/*
+ * These are consumed via var() in component styles, not via Tailwind utility classes.
+ * Duration tokens are intentionally NOT in @theme — Tailwind v4 has no --duration-*
+ * namespace and we don't want arbitrary utilities generated for them.
+ */
+:root {
+	/* Duration tokens (used as: transition-duration: var(--duration-base)) */
+	--duration-fast: 100ms;
+	--duration-base: 180ms;
+	--duration-slow: 280ms;
+
+	/* Density */
+	--font-size-base: 16px;
+	--line-height-base: 1.5;
+
+	/* Control heights (for inputs, buttons, selects) */
+	--control-h-sm: 28px;
+	--control-h-md: 36px;
+	--control-h-lg: 44px;
+}
+
+html {
+	font-size: var(--font-size-base);
+	line-height: var(--line-height-base);
+}
+
+/* ─── Dark mode overrides ────────────────────────────────────────────────── */
+/*
+ * Redefine semantic color aliases for .dark.
+ * Raw ramp values (--color-neutral-*) remain unchanged; only semantic aliases flip.
+ */
+.dark {
+	--color-bg: var(--color-neutral-900);
+	--color-fg: var(--color-neutral-50);
+	--color-muted: var(--color-neutral-500);
+	--color-border: var(--color-neutral-700);
+	--color-surface: oklch(27.4% 0.009 264.5); /* ~neutral-800; inline: 5-stop ramp has no 800 */
+	--color-accent: var(--color-accent-400);
+	--color-accent-fg: var(--color-neutral-900);
+	--color-destructive: var(--color-destructive-500);
+	--color-destructive-fg: #ffffff;
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+/*
+ * Honor prefers-reduced-motion by zeroing all duration tokens.
+ * Components that use var(--duration-*) for transitions will snap immediately.
+ * Rule: styling.md — prefers-reduced-motion honored on motion-heavy components.
+ */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-fast: 0ms;
+		--duration-base: 0ms;
+		--duration-slow: 0ms;
+	}
+}
