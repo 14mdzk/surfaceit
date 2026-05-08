@@ -11,7 +11,9 @@ One-line rationale per non-trivial dependency added to `package.json`. New entri
 
 ## Dev dependencies
 
-(none recorded yet — Phase 1 dev deps tracked in `CHANGELOG.md`'s Phase 1 entry.)
+| Package | Version | Rationale |
+|---|---|---|
+| `@vitest/coverage-v8` | `^4.1.5` | V8-based coverage provider for Vitest. Peer of `vitest`; required to run `vitest --coverage`. Zero runtime surface, test-only, MIT. |
 
 ## Conventions
 

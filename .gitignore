@@ -8,6 +8,7 @@ node_modules
 /.svelte-kit
 /build
 /.claude/worktrees
+/coverage
 
 # OS
 .DS_Store
