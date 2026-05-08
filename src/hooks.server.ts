@@ -3,7 +3,7 @@
  *
  * Stack (in execution order):
  *   1. requestIdHandle    — generate per-request id, attach to locals, echo header.
- *   2. authHandle         — populate locals.session from `sid` cookie (stub in Phase 1).
+ *   2. authHandle         — populate locals.session from `sid` cookie.
  *   3. paraglideHandle    — locale resolution + AsyncLocalStorage for messages.
  *   4. securityHandle     — apply CSP and other security headers (last so it sees the final response).
  *
@@ -12,13 +12,20 @@
  *   - rule .claude/rules/security.md       (CSP, Referrer-Policy, X-Content-Type-Options, …)
  *   - rule .claude/rules/auth-and-session.md (session resolved server-side, never client-readable token)
  *   - rule .claude/rules/i18n.md           (locale comes from cookie, defaults to `en`)
- *   - ADR 0003                             (cookie session, refresh logic deferred to Phase 3)
+ *   - ADR 0003                             (cookie session, transparent refresh, coalesced per-session)
  */
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { paraglideMiddleware } from '$lib/generated/paraglide/server.js';
 import { serverLogger } from '$core/logger/pino.server';
+import {
+	sessionStore,
+	toLocals,
+	clearAuthCookies,
+	transparentRefresh,
+	isNearExpiry
+} from '$core/auth/index';
 
 const REQUEST_ID_HEADER = 'x-request-id';
 
@@ -40,16 +47,54 @@ const requestIdHandle: Handle = async ({ event, resolve }) => {
 /**
  * Read the `sid` cookie and populate `event.locals.session`.
  *
- * TODO(phase-3): wire upstream session lookup, refresh-on-near-expiry, and
- * coalesced refresh promise per ADR 0003 / rule auth-and-session.md. For now
- * this hook always resolves to `null` so downstream code can branch safely.
+ * Pipeline:
+ *   1. No sid cookie → session = null.
+ *   2. sid present, no record in store → clear cookies, session = null.
+ *   3. Record found, near expiry → transparent refresh via coalescer.
+ *      - Refresh 401 → destroy session, clear cookies, session = null.
+ *      - Refresh success → update locals with new record.
+ *   4. Populate locals.session with { user, role, accessToken, expiresAt }.
+ *
+ * Conformance: rule auth-and-session.md, ADR 0003.
  */
 const authHandle: Handle = async ({ event, resolve }) => {
-	// Read the cookie even though we do not use it yet — the side effect of a
-	// `cookies.get` call is part of SvelteKit's cookie-tracking contract.
-	const _sid = event.cookies.get('sid');
-	void _sid;
-	event.locals.session = null;
+	const sid = event.cookies.get('sid');
+
+	if (!sid) {
+		event.locals.session = null;
+		return resolve(event);
+	}
+
+	let record = await sessionStore.get(sid);
+
+	if (!record) {
+		// Stale or tampered sid — clear the orphaned cookies
+		clearAuthCookies(event.cookies);
+		event.locals.session = null;
+		serverLogger.debug(
+			{ requestId: event.locals.requestId },
+			'authHandle: sid present but no session record, cleared cookies'
+		);
+		return resolve(event);
+	}
+
+	if (isNearExpiry(record)) {
+		try {
+			record = await transparentRefresh(sid, record);
+		} catch {
+			// Refresh failed (expired or upstream error) — invalidate session
+			await sessionStore.delete(sid);
+			clearAuthCookies(event.cookies);
+			event.locals.session = null;
+			serverLogger.warn(
+				{ requestId: event.locals.requestId },
+				'authHandle: token refresh failed, session invalidated'
+			);
+			return resolve(event);
+		}
+	}
+
+	event.locals.session = toLocals(record);
 	return resolve(event);
 };
 
