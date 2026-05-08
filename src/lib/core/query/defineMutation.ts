@@ -14,7 +14,7 @@
  *
  * `buildMutationOptions` is a pure function that returns the TanStack options
  * object. Test the `mutationFn` path directly by calling
- * `buildMutationOptions(...).mutationFn(variables, context)` without needing a
+ * `buildMutationOptions(...).mutationFn(variables)` without needing a
  * component.
  *
  * `defineMutation` itself wraps `createMutation` and requires component
@@ -24,7 +24,14 @@
  * once the first domain lands and the jsdom Vitest environment is set up.
  */
 import { createMutation } from '@tanstack/svelte-query';
-import { api, type ApiError, type BodyOf, type EndpointKey, type ResponseOf } from '$core/api';
+import {
+	api,
+	type ApiError,
+	type ArgOf,
+	type BodyOf,
+	type EndpointKey,
+	type ResponseOf
+} from '$core/api';
 import type { CreateMutationOptions } from '@tanstack/svelte-query';
 
 // ---------------------------------------------------------------------------
@@ -33,9 +40,15 @@ import type { CreateMutationOptions } from '@tanstack/svelte-query';
 
 /**
  * The variables object passed to the mutation trigger.
- * Pairs the request body with an optional caller-provided request id.
+ * Pairs the request args (path/query params) and body with an optional
+ * caller-provided request id.
+ *
+ * `args` is required for endpoints whose `path` builder takes non-void params
+ * (e.g. `PUT /cameras/{id}` → `args: { id: string }`). For endpoints with a
+ * void args type, pass `undefined`.
  */
-export interface MutationVariables<TBody> {
+export interface MutationVariables<TArgs, TBody> {
+	args: TArgs;
 	body: TBody;
 	/**
 	 * Caller-provided request id forwarded to `api()` as `opts.requestId`.
@@ -53,8 +66,8 @@ export interface MutationVariables<TBody> {
  * Subset of TanStack's `CreateMutationOptions` that `defineMutation` accepts.
  * The full set is available by passing options directly via `buildMutationOptions`.
  */
-export type DefineMutationOptions<TData, TBody> = Pick<
-	CreateMutationOptions<TData, ApiError, MutationVariables<TBody>>,
+export type DefineMutationOptions<TData, TArgs, TBody> = Pick<
+	CreateMutationOptions<TData, ApiError, MutationVariables<TArgs, TBody>>,
 	'onSuccess' | 'onError' | 'onSettled' | 'onMutate'
 >;
 
@@ -67,17 +80,19 @@ export type DefineMutationOptions<TData, TBody> = Pick<
  *
  * The returned object's `mutationFn` can be called directly in unit tests:
  * ```ts
- * const opts = buildMutationOptions('auth.login')
- * const result = await opts.mutationFn({ body: { email, password } }, context)
+ * const opts = buildMutationOptions('camera.update')
+ * const result = await opts.mutationFn({ args: { id: '123' }, body: { name: 'Cam A' } })
  * ```
+ *
+ * For bodyless, argless endpoints (e.g. `auth.session`), pass `{ args: undefined, body: undefined }`.
  */
 export function buildMutationOptions<K extends EndpointKey>(
 	key: K,
-	opts?: DefineMutationOptions<ResponseOf<K>, BodyOf<K>>
-): CreateMutationOptions<ResponseOf<K>, ApiError, MutationVariables<BodyOf<K>>> {
+	opts?: DefineMutationOptions<ResponseOf<K>, ArgOf<K>, BodyOf<K>>
+): CreateMutationOptions<ResponseOf<K>, ApiError, MutationVariables<ArgOf<K>, BodyOf<K>>> {
 	return {
-		mutationFn: ({ body, requestId }: MutationVariables<BodyOf<K>>) =>
-			api(key, undefined as never, body, {
+		mutationFn: ({ args, body, requestId }: MutationVariables<ArgOf<K>, BodyOf<K>>) =>
+			api(key, args, body, {
 				requestId,
 				// On the client, globalThis.fetch is available. Mutations always
 				// originate client-side; the BFF handles auth server-side.
@@ -106,19 +121,19 @@ export function buildMutationOptions<K extends EndpointKey>(
  *   import { defineMutation, getQueryClient } from '$core/query'
  *
  *   const qc = getQueryClient()
- *   const loginMutation = defineMutation('auth.login', {
- *     onSuccess: () => qc.invalidateQueries({ queryKey: ['auth'] })
+ *   const updateMutation = defineMutation('camera.update', {
+ *     onSuccess: () => qc.invalidateQueries({ queryKey: ['camera'] })
  *   })
  * </script>
  *
- * <button onclick={() => $loginMutation.mutate({ body: { email, password } })}>
- *   Sign in
+ * <button onclick={() => $updateMutation.mutate({ args: { id }, body: { name } })}>
+ *   Save
  * </button>
  * ```
  */
 export function defineMutation<K extends EndpointKey>(
 	key: K,
-	opts?: DefineMutationOptions<ResponseOf<K>, BodyOf<K>>
+	opts?: DefineMutationOptions<ResponseOf<K>, ArgOf<K>, BodyOf<K>>
 ) {
 	return createMutation(() => buildMutationOptions(key, opts));
 }
