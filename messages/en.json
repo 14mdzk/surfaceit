@@ -5,5 +5,11 @@
 	"locale_switch_label": "Language",
 	"error_generic_title": "Something went wrong",
 	"error_generic_body": "An unexpected error occurred. Please try again.",
-	"error_request_id": "Request ID: {id}"
+	"error_request_id": "Request ID: {id}",
+	"api_error_network": "Could not reach the server. Check your connection and try again.",
+	"api_error_server": "The server returned an error. Please try again.",
+	"api_error_unauthorized": "You need to sign in to continue.",
+	"api_error_forbidden": "You do not have permission to perform this action.",
+	"api_error_not_found": "The requested resource was not found.",
+	"api_error_generic": "Something went wrong. Please try again."
 }
