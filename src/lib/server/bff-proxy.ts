@@ -69,10 +69,30 @@ export function buildProxyRequest(params: {
 /**
  * Strip headers from the upstream response that must not reach the browser.
  * `set-cookie` is stripped because tokens are held server-side only.
+ *
+ * When the upstream Content-Type is `text/event-stream`, anti-buffering headers
+ * are added so the stream is not collapsed by intermediate proxies (nginx,
+ * Cloudflare, etc.) before it reaches the browser:
+ *   - `Cache-Control: no-cache, no-transform` — disables all proxy caching and
+ *     content transformation that would buffer the response.
+ *   - `X-Accel-Buffering: no` — nginx-specific flag; instructs nginx not to
+ *     buffer the response body even when proxy_buffering is on globally.
+ *   - `Connection: keep-alive` — keeps the underlying TCP connection alive
+ *     across the proxy boundary so the stream is not torn down prematurely.
+ *
+ * Conformance:
+ *   - rule .claude/rules/realtime.md (SSE through BFF, no token in browser)
  */
 export function buildProxyResponse(upstreamResponse: Response): Response {
 	const headers = new Headers(upstreamResponse.headers);
 	headers.delete('set-cookie');
+
+	const contentType = upstreamResponse.headers.get('content-type') ?? '';
+	if (contentType.startsWith('text/event-stream')) {
+		headers.set('cache-control', 'no-cache, no-transform');
+		headers.set('x-accel-buffering', 'no');
+		headers.set('connection', 'keep-alive');
+	}
 
 	return new Response(upstreamResponse.body, {
 		status: upstreamResponse.status,
