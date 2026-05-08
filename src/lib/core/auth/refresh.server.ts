@@ -57,20 +57,21 @@ export function transparentRefresh(sid: string, current: SessionRecord): Promise
 	const existing = inFlight.get(sid);
 	if (existing) return existing;
 
-	const promise = doRefresh(sid, current).finally(() => {
+	// Register the entry BEFORE chaining .finally() so the Map entry exists
+	// before any rejection handler can fire — regardless of rejection timing.
+	const promise = doRefresh(sid, current);
+	inFlight.set(sid, promise);
+	return promise.finally(() => {
 		// Always clear the in-flight entry — whether the refresh succeeded or
 		// failed — so the next request can start a fresh attempt.
 		inFlight.delete(sid);
 	});
-
-	inFlight.set(sid, promise);
-	return promise;
 }
 
 async function doRefresh(sid: string, current: SessionRecord): Promise<SessionRecord> {
 	// Direct upstream call: auth lifecycle only (no Bearer to inject pre-login,
 	// or server-side revocation). All other upstream calls go through api()
-	// per .claude/rules/api-contract.md. See ADR 0003.
+	// per .claude/rules/api-contract.md. See ADR 0003 + ADR 0008 (pending).
 	let response: Response;
 	try {
 		response = await fetch(`${serverConfig.UPSTREAM_API_URL}/auth/refresh`, {

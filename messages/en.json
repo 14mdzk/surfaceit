@@ -20,5 +20,8 @@
 	"auth_login_invalid_credentials": "Invalid email or password. Please try again.",
 	"auth_login_rate_limited": "Too many sign-in attempts. Please wait and try again.",
 	"auth_login_error_generic": "Sign-in failed. Please try again.",
-	"auth_logout_success": "You have been signed out."
+	"auth_logout_success": "You have been signed out.",
+	"auth_home_greeting": "Signed in as {email}",
+	"auth_home_role_label": "Role: {role}",
+	"auth_home_signout_button": "Sign out"
 }
