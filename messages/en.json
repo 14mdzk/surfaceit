@@ -11,5 +11,14 @@
 	"api_error_unauthorized": "You need to sign in to continue.",
 	"api_error_forbidden": "You do not have permission to perform this action.",
 	"api_error_not_found": "The requested resource was not found.",
-	"api_error_generic": "Something went wrong. Please try again."
+	"api_error_generic": "Something went wrong. Please try again.",
+	"auth_login_title": "Sign in to your account",
+	"auth_login_email_label": "Email address",
+	"auth_login_email_placeholder": "you@example.com",
+	"auth_login_password_label": "Password",
+	"auth_login_submit": "Sign in",
+	"auth_login_invalid_credentials": "Invalid email or password. Please try again.",
+	"auth_login_rate_limited": "Too many sign-in attempts. Please wait and try again.",
+	"auth_login_error_generic": "Sign-in failed. Please try again.",
+	"auth_logout_success": "You have been signed out."
 }

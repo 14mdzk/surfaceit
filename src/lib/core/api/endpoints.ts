@@ -12,9 +12,16 @@
  * Conventions:
  *   - Key format: `<domain>.<action>` (e.g. `'auth.session'`, `'camera.list'`).
  *   - `path` builders return the BFF-relative path (`/api/upstream/…`).
- *     The BFF proxy (Wave-3) injects the Authorization header server-side.
+ *     The BFF proxy injects the Authorization header server-side.
  *   - Add Zod parsers in `parsers/<name>.ts` for endpoints with a history of
  *     contract violations or stricter typing needs (see api-contract rule).
+ *
+ * Auth lifecycle exception (ADR 0008):
+ *   `auth.login`, `auth.logout`, and `auth.refresh` are declared in the
+ *   registry for type derivation and catalog completeness. However, they are
+ *   called directly via server-side fetch in `core/auth/**` and
+ *   `routes/(auth)/**` — NOT through `api()`. See ADR 0008 for rationale.
+ *   Do not call `api('auth.login', …)` etc. from client or load functions.
  */
 import type { paths } from '$generated/upstream';
 
@@ -90,6 +97,48 @@ export const Endpoints = {
 	'auth.session': defineEndpoint<void, void, DataOf<Get200<'/auth/session', 'get'>>>({
 		method: 'GET',
 		path: () => '/api/upstream/auth/session'
+	}),
+
+	/**
+	 * Exchange credentials for tokens.
+	 *
+	 * CATALOG ENTRY ONLY — called server-side directly per ADR 0008, not
+	 * through api(). Do not use api('auth.login', …) from client code.
+	 * Type derivation from $generated/upstream is the value here.
+	 */
+	'auth.login': defineEndpoint<
+		void,
+		Get200<'/auth/login', 'post'> extends { data: { accessToken: string } }
+			? { email: string; password: string }
+			: { email: string; password: string },
+		DataOf<Get200<'/auth/login', 'post'>>
+	>({
+		method: 'POST',
+		path: () => '/api/upstream/auth/login'
+	}),
+
+	/**
+	 * Revoke the current session on the upstream.
+	 *
+	 * CATALOG ENTRY ONLY — called server-side directly per ADR 0008.
+	 */
+	'auth.logout': defineEndpoint<void, void, DataOf<Get200<'/auth/logout', 'post'>>>({
+		method: 'POST',
+		path: () => '/api/upstream/auth/logout'
+	}),
+
+	/**
+	 * Rotate the access token using a refresh token.
+	 *
+	 * CATALOG ENTRY ONLY — called server-side directly per ADR 0008.
+	 */
+	'auth.refresh': defineEndpoint<
+		void,
+		{ refreshToken: string },
+		DataOf<Get200<'/auth/refresh', 'post'>>
+	>({
+		method: 'POST',
+		path: () => '/api/upstream/auth/refresh'
 	})
 } as const;
 
