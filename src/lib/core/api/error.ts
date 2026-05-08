@@ -46,26 +46,28 @@ export class ApiError extends Error {
 /**
  * Maps well-known API error codes to Paraglide message keys.
  *
- * Domain services should look up this table when converting an `ApiError`
- * into user-visible copy. Keep keys consistent with `messages/en.json`.
+ * Keys follow the snake_case + group-prefix convention codified in
+ * ADR 0007 (`docs/decisions/0007-i18n-facade-and-key-shape.md`):
+ * `api_error_<reason>`.
  *
- * Add upstream-specific codes here as they are encountered. Unknown codes
- * fall through to `'common.error.generic'`.
+ * Domain services look up this table when converting an `ApiError`
+ * into user-visible copy. Keep keys consistent with `messages/en.json`.
+ * Unknown codes fall through to `'api_error_generic'`.
  */
 export const API_ERROR_I18N_KEYS: Record<string, string> = {
-	NETWORK_ERROR: 'common.error.network',
-	HTTP_ERROR: 'common.error.server',
-	UNEXPECTED_SHAPE: 'common.error.generic',
-	MISSING_FETCH: 'common.error.generic',
-	UNAUTHORIZED: 'common.error.unauthorized',
-	FORBIDDEN: 'common.error.forbidden',
-	NOT_FOUND: 'common.error.notFound'
+	NETWORK_ERROR: 'api_error_network',
+	HTTP_ERROR: 'api_error_server',
+	UNEXPECTED_SHAPE: 'api_error_generic',
+	MISSING_FETCH: 'api_error_generic',
+	UNAUTHORIZED: 'api_error_unauthorized',
+	FORBIDDEN: 'api_error_forbidden',
+	NOT_FOUND: 'api_error_not_found'
 };
 
 /**
  * Resolve an `ApiError` to its i18n message key.
- * Falls back to `'common.error.generic'` for unknown codes.
+ * Falls back to `'api_error_generic'` for unknown codes.
  */
 export function apiErrorI18nKey(error: ApiError): string {
-	return API_ERROR_I18N_KEYS[error.code] ?? 'common.error.generic';
+	return API_ERROR_I18N_KEYS[error.code] ?? 'api_error_generic';
 }
