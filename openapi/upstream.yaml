@@ -16,6 +16,59 @@ paths:
                 $ref: '#/components/schemas/SessionEnvelope'
         '401':
           description: Unauthorized
+  /auth/login:
+    post:
+      operationId: postAuthLogin
+      summary: Exchange credentials for tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginEnvelope'
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many requests
+  /auth/logout:
+    post:
+      operationId: postAuthLogout
+      summary: Revoke the current session
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkEnvelope'
+        '401':
+          description: Unauthorized
+  /auth/refresh:
+    post:
+      operationId: postAuthRefresh
+      summary: Rotate the access token using a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokensEnvelope'
+        '401':
+          description: Refresh token invalid or expired
 components:
   schemas:
     SessionUser:
@@ -36,4 +89,44 @@ components:
       properties:
         success: { type: boolean }
         data: { $ref: '#/components/schemas/SessionData' }
+        message: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    TokensData:
+      type: object
+      required: [accessToken, refreshToken, expiresIn, user, role]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        expiresIn: { type: integer, description: Seconds until access token expires }
+        user: { $ref: '#/components/schemas/SessionUser' }
+        role: { type: string }
+    LoginEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/TokensData' }
+        message: { type: string }
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+    TokensEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/TokensData' }
+        message: { type: string }
+    OkEnvelope:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean }
         message: { type: string }
