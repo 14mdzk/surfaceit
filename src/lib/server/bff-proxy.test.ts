@@ -89,6 +89,24 @@ describe('buildProxyRequest — header stripping', () => {
 		});
 		expect(proxy.headers.get('accept')).toBe('application/json');
 	});
+
+	it('strips content-length to let fetch recompute or use chunked transfer', () => {
+		// Forwarding a stale content-length can cause upstream 400s when the
+		// body has been re-encoded or when duplex streaming is used (Fix 2, PR #8).
+		const req = makeRequest(
+			'POST',
+			{ 'content-length': '42', 'content-type': 'application/json' },
+			'{}'
+		);
+		const proxy = buildProxyRequest({
+			upstreamUrl: 'http://upstream/cameras',
+			originalRequest: req,
+			accessToken: null,
+			requestId: 'req-1',
+			signal: ABORT_SIGNAL
+		});
+		expect(proxy.headers.get('content-length')).toBeNull();
+	});
 });
 
 describe('buildProxyRequest — auth injection', () => {

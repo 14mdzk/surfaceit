@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { m } from '$core/i18n';
+	import type { PageData } from './$types';
 
-	let { data } = $props();
+	let { data }: { data: PageData } = $props();
 
 	/**
 	 * Read the csrf cookie value for the double-submit logout form.
@@ -18,7 +19,10 @@
 <section class="space-y-4">
 	<h2 class="text-2xl font-bold">{m.hello({ name: data.user.email })}</h2>
 	<p class="text-slate-600">
-		Signed in as <strong>{data.user.email}</strong> ({data.role})
+		{m.auth_home_greeting({ email: data.user.email })}
+	</p>
+	<p class="text-slate-600">
+		{m.auth_home_role_label({ role: data.role })}
 	</p>
 
 	<!--
@@ -42,7 +46,7 @@
 			type="submit"
 			class="rounded-md bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300"
 		>
-			Sign out
+			{m.auth_home_signout_button()}
 		</button>
 	</form>
 </section>

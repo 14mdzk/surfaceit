@@ -62,7 +62,7 @@ export const actions: Actions = {
 
 		// Direct upstream call: auth lifecycle only (no Bearer to inject pre-login,
 		// or server-side revocation). All other upstream calls go through api()
-		// per .claude/rules/api-contract.md. See ADR 0003.
+		// per .claude/rules/api-contract.md. See ADR 0003 + ADR 0008 (pending).
 		let upstreamResponse: Response;
 		try {
 			upstreamResponse = await fetch(`${serverConfig.UPSTREAM_API_URL}/auth/login`, {

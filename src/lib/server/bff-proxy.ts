@@ -19,7 +19,6 @@
 const ALLOWED_REQUEST_HEADERS = new Set([
 	'accept',
 	'content-type',
-	'content-length',
 	'accept-language',
 	'accept-encoding'
 ]);

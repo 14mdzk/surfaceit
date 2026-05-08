@@ -80,20 +80,9 @@ test('unauthenticated access to protected route redirects to /login', async ({ p
 test('logout clears session and redirects to /login', async ({ page }) => {
 	await login(page);
 
-	// Submit the logout form (POST /logout)
-	// The logout form must exist on the page for authenticated users
-	const logoutForm = page.locator('form[action="/logout"]');
-	const logoutButton = page.getByRole('button', { name: /sign out|log out/i });
-
-	if ((await logoutForm.count()) > 0) {
-		// If there's a logout form with CSRF token, submit it
-		await logoutButton.click();
-	} else {
-		// Navigate directly — the test still verifies the session is cleared
-		// by checking that protected routes redirect after the cookie is gone
-		await page.context().clearCookies();
-		await page.goto('/');
-	}
+	// Submit the logout form (POST /logout). The form is rendered on the home
+	// page for every authenticated user — if it is missing the test should fail.
+	await page.getByRole('button', { name: /sign out/i }).click();
 
 	await expect(page).toHaveURL('/login');
 });
@@ -113,7 +102,7 @@ test('POST to BFF without x-csrf header is rejected on non-login paths', async (
 		data: {}
 	});
 
-	// 403 CSRF, 401 unauth, or 404 (camera endpoint doesn't exist in stub)
-	// are all acceptable; 200 is NOT acceptable
-	expect(response.status()).not.toBe(200);
+	// CSRF check fires before auth lookup (validateCsrf is first in the BFF handler).
+	// A POST without x-csrf must always return 403 — any other status means CSRF is broken.
+	expect(response.status()).toBe(403);
 });
