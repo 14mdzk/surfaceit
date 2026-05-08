@@ -6,12 +6,12 @@ Phased delivery. Each phase ends with a tagged commit and an updated `CHANGELOG.
 
 Goal: turn the empty SvelteKit skeleton into a documented, governed repo.
 
-- [ ] Root `CLAUDE.md`
-- [ ] `docs/` archive (charter, roadmap, architecture, decisions, wiki, guides)
-- [ ] `.claude/rules/` (15 always-apply rules)
-- [ ] `.claude/agents/` adapted personas + specialist roster
-- [ ] `.claude/CLAUDE.md` minor index
-- [ ] First ADRs (0001–0005) accepted
+- [x] Root `CLAUDE.md`
+- [x] `docs/` archive (charter, roadmap, architecture, decisions, wiki, guides)
+- [x] `.claude/rules/` (15 always-apply rules)
+- [x] `.claude/agents/` adapted personas + specialist roster
+- [x] `.claude/CLAUDE.md` minor index
+- [x] First ADRs (0001–0005) accepted
 
 Exit criteria: a fresh agent can read the docs and act safely without inventing conventions.
 

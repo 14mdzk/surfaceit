@@ -21,9 +21,9 @@ docs/
 │   ├── 0004-openapi-codegen.md
 │   └── 0005-i18n-paraglide.md
 └── guides/                    ← how-to / playbooks
-    ├── getting-started.md
-    ├── add-new-domain.md
-    └── add-new-primitive.md
+    ├── add-a-domain.md
+    ├── add-a-route.md
+    └── run-tests.md
 ```
 
 > **Living best-practices, findings, and anti-patterns are not stored under `docs/`.**
