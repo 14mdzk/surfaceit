@@ -1,11 +1,13 @@
 /**
- * Unit tests for the BFF proxy's `buildProxyRequest` pure function.
+ * Unit tests for the BFF proxy's `buildProxyRequest` and `buildProxyResponse`
+ * pure functions.
  *
- * Tests the header stripping, auth injection, and request-id forwarding
- * logic in isolation — no SvelteKit routing involved.
+ * Tests the header stripping, auth injection, request-id forwarding, and
+ * SSE anti-buffering header injection logic in isolation — no SvelteKit
+ * routing involved.
  */
 import { describe, it, expect } from 'vitest';
-import { buildProxyRequest } from '$server/bff-proxy.js';
+import { buildProxyRequest, buildProxyResponse } from '$server/bff-proxy.js';
 
 const ABORT_SIGNAL = new AbortController().signal;
 
@@ -172,5 +174,77 @@ describe('buildProxyRequest — URL', () => {
 			signal: ABORT_SIGNAL
 		});
 		expect(proxy.method).toBe('DELETE');
+	});
+});
+
+// ---------------------------------------------------------------------------
+// buildProxyResponse — SSE anti-buffering headers
+// ---------------------------------------------------------------------------
+
+function makeUpstreamResponse(
+	contentType: string,
+	extraHeaders: Record<string, string> = {}
+): Response {
+	const headers = new Headers({ 'content-type': contentType, ...extraHeaders });
+	return new Response(null, { status: 200, headers });
+}
+
+describe('buildProxyResponse — text/event-stream anti-buffering headers', () => {
+	it('adds Cache-Control: no-cache, no-transform for text/event-stream', () => {
+		const upstream = makeUpstreamResponse('text/event-stream');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('cache-control')).toBe('no-cache, no-transform');
+	});
+
+	it('adds X-Accel-Buffering: no for text/event-stream', () => {
+		const upstream = makeUpstreamResponse('text/event-stream');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('x-accel-buffering')).toBe('no');
+	});
+
+	it('adds Connection: keep-alive for text/event-stream', () => {
+		const upstream = makeUpstreamResponse('text/event-stream');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('connection')).toBe('keep-alive');
+	});
+
+	it('handles content-type with charset suffix (text/event-stream; charset=utf-8)', () => {
+		const upstream = makeUpstreamResponse('text/event-stream; charset=utf-8');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('cache-control')).toBe('no-cache, no-transform');
+		expect(proxy.headers.get('x-accel-buffering')).toBe('no');
+		expect(proxy.headers.get('connection')).toBe('keep-alive');
+	});
+
+	it('does NOT add anti-buffering headers for application/json', () => {
+		const upstream = makeUpstreamResponse('application/json');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('cache-control')).toBeNull();
+		expect(proxy.headers.get('x-accel-buffering')).toBeNull();
+		expect(proxy.headers.get('connection')).toBeNull();
+	});
+
+	it('does NOT add anti-buffering headers for text/plain', () => {
+		const upstream = makeUpstreamResponse('text/plain');
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('cache-control')).toBeNull();
+		expect(proxy.headers.get('x-accel-buffering')).toBeNull();
+		expect(proxy.headers.get('connection')).toBeNull();
+	});
+
+	it('does NOT add anti-buffering headers when content-type is absent', () => {
+		const upstream = new Response(null, { status: 200 });
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('cache-control')).toBeNull();
+		expect(proxy.headers.get('x-accel-buffering')).toBeNull();
+		expect(proxy.headers.get('connection')).toBeNull();
+	});
+
+	it('still strips set-cookie from SSE responses', () => {
+		const upstream = makeUpstreamResponse('text/event-stream', {
+			'set-cookie': 'sid=secret; HttpOnly'
+		});
+		const proxy = buildProxyResponse(upstream);
+		expect(proxy.headers.get('set-cookie')).toBeNull();
 	});
 });
