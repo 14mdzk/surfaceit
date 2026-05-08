@@ -42,7 +42,19 @@ export default ts.config(
 		}
 	},
 	{
-		files: ['src/**/*.{ts,svelte}'],
+		// .svelte.ts files contain Svelte 5 runes ($state, $derived, etc.).
+		// They are TypeScript files but need explicit parser assignment because
+		// the extension does not match the default *.ts glob in ts.configs.recommended.
+		files: ['**/*.svelte.ts'],
+		languageOptions: {
+			parser: ts.parser,
+			parserOptions: {
+				project: './tsconfig.json'
+			}
+		}
+	},
+	{
+		files: ['src/**/*.{ts,svelte,svelte.ts}'],
 		ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/lib/core/logger/**'],
 		rules: {
 			'no-console': ['error', { allow: ['warn', 'error'] }]
