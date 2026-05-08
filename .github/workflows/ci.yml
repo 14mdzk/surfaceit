@@ -36,4 +36,11 @@ jobs:
       - name: Unit tests
         run: bun run test
       - name: Build
+        env:
+          # Phase 2 core/auth introduced consumed `$env/static/private` vars
+          # (UPSTREAM_API_URL, SESSION_SECRET). SvelteKit resolves these at
+          # build time. CI has no `.env`, so we provide CI-safe placeholders.
+          # Real deployments populate via the platform env (Vercel, Fly, etc.).
+          UPSTREAM_API_URL: https://upstream.example.com
+          SESSION_SECRET: ci-build-time-placeholder-not-real
         run: bun run build
