@@ -68,4 +68,42 @@ once it tags a release.
   (`paraglideVitePlugin`) inside `@inlang/paraglide-js` itself; the
   separate adapter package is no longer required. See ADR 0006.
 
+- **Phase 2 — Wave-1 (config, cn+tokens, day-one docs).**
+  - `core/config`: Zod-validated env loader (public/private split).
+    `publicConfig` reads from `$env/static/public`
+    (`PUBLIC_API_URL`, `PUBLIC_LOG_LEVEL`, `PUBLIC_APP_NAME`);
+    `serverConfig` reads from `$env/static/private`
+    (`UPSTREAM_API_URL`, `SESSION_SECRET ≥ 32`, `NODE_ENV`, `isProd`)
+    and is colocated in `index.server.ts` so SvelteKit's Vite plugin
+    enforces server-only at build time. `.env.example` documents the
+    contract; `.env.test` ships safe placeholders so a fresh clone
+    passes `bun run check` without populating `.env`.
+  - `package.json` `check` / `check:watch` now pass
+    `--mode test` to `svelte-kit sync` so ambient `$env/static/*`
+    types resolve under a clean clone.
+  - `shared/utils/cn`: `clsx` + `tailwind-merge` merger. The only
+    class merger in the repo. 10 Vitest cases.
+  - `app.css` design tokens: neutral and accent ramps (5 stops),
+    light/dark pair, semantic aliases (`--color-bg/fg/muted/border/
+surface/accent/destructive`), radius scale, three-step elevation,
+    motion durations (0 ms under `prefers-reduced-motion`), easings,
+    base font-size/line-height, three control heights. Tailwind v4
+    `@theme` exposes them as utility classes.
+  - Day-one docs: README rewrite (quickstart, layout, doc-reading
+    order, phase status), three guides (`add-a-domain`, `add-a-route`,
+    `run-tests`) with Phase 2 in-flight gaps blockquoted, and
+    `.github/PULL_REQUEST_TEMPLATE.md` encoding `definition-of-done.md`
+    - `agent-dispatch.md` (rules cited, ADR check, every task
+      complete before opening, persona/specialist dispatch named).
+  - Runtime deps: `clsx@^2.1.1`, `tailwind-merge@^3.5.0` — rationale
+    in `docs/decisions/dependencies.md`.
+
+  Wave-1 known deferrals (Wave-2 follow-ups):
+  - `.dark` class toggle wiring + token consumption in `+layout.svelte`
+    (currently still on hardcoded `bg-white text-slate-900`).
+  - `core/logger` rewire to consume `publicConfig.PUBLIC_LOG_LEVEL`
+    instead of only `dev` from `$app/environment`.
+  - Token gaps for primitives: `--color-focus-ring`, hover/active/
+    disabled aliases.
+
 [Unreleased]: https://github.com/maulanazain/surfaceit/compare/06e1b15...HEAD
