@@ -1,0 +1,39 @@
+openapi: '3.1.0'
+info:
+  title: goscratch upstream (placeholder)
+  version: '0.0.0'
+paths:
+  /auth/session:
+    get:
+      operationId: getAuthSession
+      summary: Return the current session info
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionEnvelope'
+        '401':
+          description: Unauthorized
+components:
+  schemas:
+    SessionUser:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: string }
+        email: { type: string }
+    SessionData:
+      type: object
+      required: [user, role]
+      properties:
+        user: { $ref: '#/components/schemas/SessionUser' }
+        role: { type: string }
+    SessionEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/SessionData' }
+        message: { type: string }

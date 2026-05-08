@@ -16,7 +16,8 @@
 		"test": "bun run i18n:compile && vitest run",
 		"test:watch": "vitest",
 		"test:e2e": "playwright test",
-		"codegen": "bun run i18n:compile"
+		"openapi:types": "openapi-typescript openapi/upstream.yaml -o src/lib/generated/upstream.ts",
+		"codegen": "bun run i18n:compile && bun run openapi:types"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
