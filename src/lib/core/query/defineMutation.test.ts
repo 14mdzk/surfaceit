@@ -24,11 +24,12 @@ import { buildMutationOptions } from './defineMutation.js';
 
 /**
  * Typed mutationFn caller for tests.
- * BodyOf<'auth.session'> resolves to never (void becomes never via conditional
- * type inference in TS6). We double-cast through unknown to call mutationFn
- * in tests without satisfying the phantom-typed body constraint.
+ * ArgOf<'auth.session'> and BodyOf<'auth.session'> both resolve to never (void
+ * becomes never via conditional type inference in TS6). We double-cast through
+ * unknown to call mutationFn in tests without satisfying the phantom-typed
+ * args/body constraint.
  */
-type TestMutFn = (v: { body: undefined; requestId?: string }) => Promise<unknown>;
+type TestMutFn = (v: { args: undefined; body: undefined; requestId?: string }) => Promise<unknown>;
 
 function getMutFn(opts: ReturnType<typeof buildMutationOptions>): TestMutFn {
 	return opts.mutationFn as unknown as TestMutFn;
@@ -109,7 +110,7 @@ describe('buildMutationOptions — mutationFn success', () => {
 		// withBrowserEnv patches window + fetch so api() can run in Node tests.
 		await withBrowserEnv(async () => {
 			const opts = buildMutationOptions('auth.session');
-			const result = await getMutFn(opts)({ body: undefined });
+			const result = await getMutFn(opts)({ args: undefined, body: undefined });
 			expect(result).toEqual({ user: { id: '1', email: 'a@b.com' }, role: 'admin' });
 		});
 	});
@@ -130,7 +131,7 @@ describe('buildMutationOptions — mutationFn error paths', () => {
 
 		await withBrowserEnv(async () => {
 			const opts = buildMutationOptions('auth.session');
-			await expect(getMutFn(opts)({ body: undefined })).rejects.toSatisfy(
+			await expect(getMutFn(opts)({ args: undefined, body: undefined })).rejects.toSatisfy(
 				(e: unknown) => e instanceof ApiError && e.code === 'HTTP_ERROR' && e.status === 500
 			);
 		});
@@ -148,7 +149,7 @@ describe('buildMutationOptions — mutationFn error paths', () => {
 
 		await withBrowserEnv(async () => {
 			const opts = buildMutationOptions('auth.session');
-			await expect(getMutFn(opts)({ body: undefined })).rejects.toSatisfy(
+			await expect(getMutFn(opts)({ args: undefined, body: undefined })).rejects.toSatisfy(
 				(e: unknown) => e instanceof ApiError && e.code === 'FORBIDDEN'
 			);
 		});
