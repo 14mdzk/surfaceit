@@ -69,16 +69,19 @@ class FakeEventSource extends EventTarget {
 globalThis.EventSource = FakeEventSource as unknown as typeof EventSource;
 
 // ---------------------------------------------------------------------------
-// Suppress logger output during tests
+// Stable fake logger — returned by every getLogger() call in the module.
+// Using a stable reference allows throttle tests to assert call counts.
 // ---------------------------------------------------------------------------
 
+const fakeLogger = {
+	debug: vi.fn(),
+	info: vi.fn(),
+	warn: vi.fn(),
+	error: vi.fn()
+};
+
 vi.mock('$core/logger/index.js', () => ({
-	getLogger: () => ({
-		debug: vi.fn(),
-		info: vi.fn(),
-		warn: vi.fn(),
-		error: vi.fn()
-	})
+	getLogger: () => fakeLogger
 }));
 
 // ---------------------------------------------------------------------------
@@ -117,6 +120,11 @@ beforeEach(() => {
 	fakeContext.clear();
 	capturedOnDestroys.length = 0;
 	vi.useFakeTimers();
+	// Reset stable logger mock so call counts are per-test.
+	fakeLogger.debug.mockClear();
+	fakeLogger.info.mockClear();
+	fakeLogger.warn.mockClear();
+	fakeLogger.error.mockClear();
 });
 
 afterEach(() => {
@@ -269,14 +277,7 @@ describe('SSEClient: parse failure', () => {
 // ---------------------------------------------------------------------------
 
 describe('SSEClient: parse error throttling', () => {
-	it('logs a parse failure at most once per event type per connection', async () => {
-		const mockLogger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
-
-		// We need a client with a controllable logger. Access it via the module
-		// logger mock — just verify that handler is NOT called (already proven in
-		// scenario 4). For throttle assertion, we verify handler is still not called
-		// on the second event and that no double-logging side effects occur.
-
+	it('logs a parse failure exactly once per event type per connection', () => {
 		const client = new SSEClient({ channels: TEST_CHANNELS });
 		client.connect();
 		const es = FakeEventSource.instances[0];
@@ -285,26 +286,51 @@ describe('SSEClient: parse error throttling', () => {
 		const received: unknown[] = [];
 		client.on('camera.added', (e) => received.push(e));
 
-		// Fire two bad events of the same type
+		// Fire three bad events of the same type — all dropped, only one log entry.
 		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD1' }));
 		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD2' }));
+		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD3' }));
 
-		// Both are dropped
 		expect(received).toHaveLength(0);
+		// Logger called exactly once — the throttle gate prevents subsequent log entries.
+		expect(fakeLogger.error).toHaveBeenCalledTimes(1);
 
-		// After disconnect, the throttle set is reset — the next connection can log again
+		// Verify the count does not grow further on a 4th bad event.
+		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD4' }));
+		expect(fakeLogger.error).toHaveBeenCalledTimes(1);
+	});
+
+	it('resets throttle on disconnect — new connection can log again', () => {
+		const client = new SSEClient({ channels: TEST_CHANNELS });
+		client.connect();
+		const es = FakeEventSource.instances[0];
+		es.emitOpen();
+
+		// Register listener so native EventSource listener is wired and parse runs.
+		client.on('camera.added', () => {});
+
+		// First bad event: logged.
+		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD1' }));
+		expect(fakeLogger.error).toHaveBeenCalledTimes(1);
+
+		// Second bad event on same connection: throttled (still 1).
+		es.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD2' }));
+		expect(fakeLogger.error).toHaveBeenCalledTimes(1);
+
+		// Disconnect resets throttle set.
 		client.disconnect();
+		fakeLogger.error.mockClear();
+
 		client.connect();
 		const es2 = FakeEventSource.instances[1];
 		es2.emitOpen();
 
-		const received2: unknown[] = [];
-		client.on('camera.added', (e) => received2.push(e));
+		// Register listener on new connection so parse runs.
+		client.on('camera.added', () => {});
+
+		// New connection — throttle reset. First bad event is logged again.
 		es2.dispatchEvent(new MessageEvent('camera.added', { data: 'BAD3' }));
-		expect(received2).toHaveLength(0);
-		// No assert on mockLogger here — logger is already mocked via vi.mock at module level.
-		// The important invariant is that the client continues functioning after throttle reset.
-		void mockLogger; // keep the reference to avoid lint complaint
+		expect(fakeLogger.error).toHaveBeenCalledTimes(1);
 	});
 });
 
