@@ -23,5 +23,9 @@
 	"auth_logout_success": "You have been signed out.",
 	"auth_home_greeting": "Signed in as {email}",
 	"auth_home_role_label": "Role: {role}",
-	"auth_home_signout_button": "Sign out"
+	"auth_home_signout_button": "Sign out",
+	"realtime_connection_lost": "Live updates disconnected.",
+	"realtime_reconnecting": "Reconnecting… ({attempt} of {max})",
+	"realtime_failed_banner": "Live updates could not reconnect. Refresh the page to try again.",
+	"realtime_parse_error": "A live update message could not be processed."
 }
